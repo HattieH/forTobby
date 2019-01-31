@@ -2,11 +2,11 @@
   <div>
     <hs-upload-excel :upload-success="handleSuccess" :before-upload="beforeUpload"></hs-upload-excel>
     <span>第二行第二列数据：{{value}}</span>
-    <div id="pie" :style="{width: '500px', height: '500px'}"></div>
+    <div id="pie" :style="{width: '800px', height: '500px'}"></div>
   </div>
 </template>
 <script>
-import echarts from 'echarts'
+import echarts from "echarts";
 import hsUploadExcel from "@/components/uploadExcel/UploadExcel";
 
 export default {
@@ -18,7 +18,19 @@ export default {
     return {
       tableData: [],
       tableHeader: [],
-      value: ""
+      value: "",
+      innerArr: [
+        { value: 0, name: "已交付" },
+        { value: 0, name: "未交付" }
+      ],
+      outerArr: [
+        { value: 0, name: "延期交付" },
+        { value: 0, name: "按时交付" },
+        { value: 0, name: "已延期" },
+        { value: 0, name: "未延期" },
+        { value: 0, name: "可能延期" }
+      ],
+      myChart: null
     };
   },
   mounted() {
@@ -31,21 +43,18 @@ export default {
         orient: "vertical",
         x: "left",
         data: [
-          "直达",
-          "营销广告",
-          "搜索引擎",
-          "邮件营销",
-          "联盟广告",
-          "视频广告",
-          "百度",
-          "谷歌",
-          "必应",
-          "其他"
+          "已交付",
+          "未交付",
+          "延期交付",
+          "按时交付",
+          "已延期",
+          "未延期",
+          "可能延期"
         ]
       },
       series: [
         {
-          name: "访问来源",
+          name: "",
           type: "pie",
           selectedMode: "single",
           radius: [0, "30%"],
@@ -60,11 +69,13 @@ export default {
               show: false
             }
           },
-          data: [
-            { value: 335, name: "直达", selected: true },
-            { value: 679, name: "营销广告" },
-            { value: 1548, name: "搜索引擎" }
-          ]
+          data:
+            // [
+            //   { value: 335, name: "直达"},
+            //   { value: 679, name: "营销广告" },
+            //   { value: 1548, name: "搜索引擎" }
+            // ]
+            this.innerArr
         },
         {
           name: "访问来源",
@@ -114,21 +125,23 @@ export default {
               }
             }
           },
-          data: [
-            { value: 335, name: "直达" },
-            { value: 310, name: "邮件营销" },
-            { value: 234, name: "联盟广告" },
-            { value: 135, name: "视频广告" },
-            { value: 1048, name: "百度" },
-            { value: 251, name: "谷歌" },
-            { value: 147, name: "必应" },
-            { value: 102, name: "其他" }
-          ]
+          data:
+            // [
+            //   { value: 335, name: "直达" },
+            //   { value: 310, name: "邮件营销" },
+            //   { value: 234, name: "联盟广告" },
+            //   { value: 135, name: "视频广告" },
+            //   { value: 1048, name: "百度" },
+            //   { value: 251, name: "谷歌" },
+            //   { value: 147, name: "必应" },
+            //   { value: 102, name: "其他" }
+            // ]
+            this.outerArr
         }
       ]
     };
-    let myChart = echarts.init(document.getElementById('pie'));
-    myChart.setOption(options);
+    this.myChart = echarts.init(document.getElementById("pie"));
+    this.myChart.setOption(options);
   },
   methods: {
     beforeUpload(file) {
@@ -145,9 +158,23 @@ export default {
       return false;
     },
     handleSuccess({ results, header }) {
+      // console.log(results)
       this.tableData = results;
       this.tableHeader = header;
       this.value = this.tableData[1][this.tableHeader[1]];
+      for (let i = 0, l = results.length; i < l; i++) {
+        if ('DLV' === results[i].Status) {
+          this.innerArr[0].value++;
+        } else {
+          this.innerArr[1].value++;
+        }
+        
+      }
+      const options = this.myChart.getOption();
+      
+      options.series[0].data = this.innerArr;
+      console.log(options)
+      this.myChart.setOption(options);
     }
   }
 };
