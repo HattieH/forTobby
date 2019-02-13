@@ -1,7 +1,7 @@
 <template>
   <div>
     <hs-upload-excel :upload-success="handleSuccess" :before-upload="beforeUpload"></hs-upload-excel>
-    <span>第二行第二列数据：{{value}}</span>
+    <!-- <span>第二行第二列数据：{{value}}</span> -->
     <div id="pie" :style="{width: '800px', height: '500px'}"></div>
   </div>
 </template>
@@ -19,10 +19,7 @@ export default {
       tableData: [],
       tableHeader: [],
       value: "",
-      innerArr: [
-        { value: 0, name: "已交付" },
-        { value: 0, name: "未交付" }
-      ],
+      innerArr: [{ value: 0, name: "已交付" }, { value: 0, name: "未交付" }],
       outerArr: [
         { value: 0, name: "延期交付" },
         { value: 0, name: "按时交付" },
@@ -161,19 +158,45 @@ export default {
       // console.log(results)
       this.tableData = results;
       this.tableHeader = header;
-      this.value = this.tableData[1][this.tableHeader[1]];
+
+      // this.value = this.tableData[1][this.tableHeader[1]];
       for (let i = 0, l = results.length; i < l; i++) {
-        if ('DLV' === results[i].Status) {
-          this.innerArr[0].value++;
-        } else {
-          this.innerArr[1].value++;
-        }
+        let resultsDate = results[i];
+        let actualFinDate = +new Date(resultsDate["Actual Finish Date"]);
+        let confirmDate = +new Date(resultsDate["1st ConfirmedDt"]);
+        let today = +new Date();
         
+        if ("DLV" === resultsDate.Status) {
+          // 已交付
+          this.innerArr[0].value++;
+          if (confirmDate < actualFinDate) {
+            // 延期交付
+            this.outerArr[0].value++;
+          } else {
+            // 按时交付
+            this.outerArr[1].value++;
+          }
+        } else {
+          // 未交付
+          this.innerArr[1].value++;
+          if (today > confirmDate ) {
+            // 已延期
+            this.outerArr[2].value++;
+          } else if (confirmDate - today <= 5*24*3600*1000){
+            // 可能延期
+            this.outerArr[4].value++;
+          } else {
+            // 未延期
+            this.outerArr[3].value++;
+          }
+        }
       }
+
       const options = this.myChart.getOption();
-      
+
       options.series[0].data = this.innerArr;
-      console.log(options)
+      options.series[1].data = this.outerArr;
+      console.log(options);
       this.myChart.setOption(options);
     }
   }
